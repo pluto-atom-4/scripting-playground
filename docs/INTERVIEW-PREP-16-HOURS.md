@@ -145,10 +145,10 @@ This role is **operationally focused** — you'll support ~29,000 websites in a 
    
    ```bash
    # Create a SQLite database for lightweight practice (no Docker needed)
-   sqlite3 wordpress_practice.db < sample-data/wordpress.sql
+   sqlite3 db/wordpress_practice.db < sample-data/wordpress.sql
    
    # Verify tables were created
-   sqlite3 wordpress_practice.db ".tables"
+   sqlite3 db/wordpress_practice.db ".tables"
    ```
 
 2. **WordPress database queries** (45 min)
@@ -157,23 +157,23 @@ This role is **operationally focused** — you'll support ~29,000 websites in a 
    
    ```bash
    # List all published posts
-   sqlite3 wordpress_practice.db \
+   sqlite3 db/wordpress_practice.db \
      "SELECT ID, post_title, post_author, post_date FROM wp_posts WHERE post_status = 'publish' ORDER BY post_date DESC;"
    
    # Find users with most posts
-   sqlite3 wordpress_practice.db \
+   sqlite3 db/wordpress_practice.db \
      "SELECT u.user_login, COUNT(p.ID) as post_count FROM wp_users u LEFT JOIN wp_posts p ON u.ID = p.post_author GROUP BY u.ID ORDER BY post_count DESC;"
    
    # Check for spam comments (unapproved)
-   sqlite3 wordpress_practice.db \
+   sqlite3 db/wordpress_practice.db \
      "SELECT comment_author, COUNT(*) as count FROM wp_comments WHERE comment_approved = '0' GROUP BY comment_author ORDER BY count DESC;"
    
    # Update a site option (URL migration scenario)
-   sqlite3 wordpress_practice.db \
+   sqlite3 db/wordpress_practice.db \
      "UPDATE wp_options SET option_value = 'https://newsite.edu' WHERE option_name = 'siteurl';"
    
    # Verify the update
-   sqlite3 wordpress_practice.db \
+   sqlite3 db/wordpress_practice.db \
      "SELECT option_name, option_value FROM wp_options WHERE option_name IN ('siteurl', 'home');"
    ```
 
@@ -240,7 +240,7 @@ This role is **operationally focused** — you'll support ~29,000 websites in a 
    c) Hacked/malware:
       - Look for suspicious access patterns: grep "eval\|base64\|passthru" sample-data/error.log
       - Check for suspicious file access: grep "/wp-admin" sample-data/access.log
-      - Review user account activities: sqlite3 wordpress_practice.db "SELECT * FROM wp_users;"
+      - Review user account activities: sqlite3 db/wordpress_practice.db "SELECT * FROM wp_users;"
       - Verify no extra admin accounts were created
    ```
 
@@ -422,7 +422,7 @@ Your approach (what you'd say in interview):
    grep -i "fatal\|critical" sample-data/error.log
 
 2. Verify database connectivity
-   sqlite3 wordpress_practice.db "SELECT COUNT(*) FROM wp_posts;"
+   sqlite3 db/wordpress_practice.db "SELECT COUNT(*) FROM wp_posts;"
    (in production: mysql -u user -p db -e "SELECT 1;")
 
 3. Check disk space
@@ -456,7 +456,7 @@ Your approach:
    Look for bot/crawler hammering site (top IPs)
 
 3. Check for database-related slow queries
-   sqlite3 wordpress_practice.db "SELECT * FROM wp_posts LIMIT 5;" 
+   sqlite3 db/wordpress_practice.db "SELECT * FROM wp_posts LIMIT 5;" 
    (in production: check MySQL slow query log)
 
 4. Review request patterns
@@ -486,7 +486,7 @@ Your approach:
    grep "\[error\]" sample-data/error.log | tail -30
 
 3. Review user accounts for unauthorized access
-   sqlite3 wordpress_practice.db "SELECT user_login, user_email, ID FROM wp_users;"
+   sqlite3 db/wordpress_practice.db "SELECT user_login, user_email, ID FROM wp_users;"
    Look for unexpected admin accounts
 
 4. Identify access patterns and timing
