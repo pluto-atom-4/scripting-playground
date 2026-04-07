@@ -76,8 +76,8 @@ This role is **operationally focused** — you'll support ~29,000 websites in a 
    **Practice with sample config files:** `sample-data/vhost.conf`, `sample-data/php.ini`
    
    ```bash
-   # Substitute a value in a config file
-   sed 's/max_connections=100/max_connections=500/' sample-data/php.ini
+   # Substitute a value in a config file (test with spaces matching)
+   sed 's/mysqli.max_connections = 150/mysqli.max_connections = 300/' sample-data/php.ini
    
    # Replace domain name (don't modify in place yet)
    sed 's/example.edu/newuniversity.edu/g' sample-data/vhost.conf
@@ -87,7 +87,10 @@ This role is **operationally focused** — you'll support ~29,000 websites in a 
    
    # Replace in place (production scenario) - ALWAYS BACKUP FIRST
    cp sample-data/php.ini sample-data/php.ini.bak
-   sed -i 's/memory_limit = 256M/memory_limit = 512M/' sample-data/php.ini
+   sed -i 's/memory_limit = 512M/memory_limit = 1024M/' sample-data/php.ini
+   
+   # Undo the change to restore original
+   mv sample-data/php.ini.bak sample-data/php.ini
    ```
    
    **Interview tip:** Mention `-i` (in-place) carefully—always backup first!
