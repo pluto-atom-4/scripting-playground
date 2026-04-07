@@ -63,6 +63,9 @@ Thumbs.db
 .session-state/
 .copilot/
 
+# Claude Code (personal overrides)
+.claude/settings.local.json
+
 # Editor temporary files
 *.swp
 *.swo

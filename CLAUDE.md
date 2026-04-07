@@ -10,8 +10,20 @@ This is a **documentation-focused DevOps learning playground** dedicated to inte
 
 ## Repository Structure
 
-- **`docs/start-from-here.md`** — Initial reference document summarizing the UW-IT Software Engineer role, key responsibilities, required skills, and interview checklist
-- **`docs/INTERVIEW-PREP-16-HOURS.md`** — Comprehensive 16-hour learning guide with hour-by-hour breakdown, practical exercises, real scenarios, and interview preparation tips
+- **`docs/`** — Learning guides and interview preparation material
+  - `start-from-here.md` — Initial reference: UW-IT Software Engineer role, responsibilities, required skills, and interview checklist
+  - `INTERVIEW-PREP-16-HOURS.md` — Comprehensive 16-hour learning guide with hour-by-hour breakdown, practical exercises, real scenarios, and interview tips
+- **`sample-data/`** — Realistic config files, logs, and scripts for hands-on practice
+  - `PRACTICE-EXERCISES.md` — Guided exercises using the sample data
+  - `access.log`, `error.log`, `backup.log` — Sample log files for grep/awk/sed practice
+  - `php.ini`, `vhost.conf`, `backup.conf` — Config files for editing exercises
+  - `wordpress.sql` — Sample SQL for database query practice
+  - `sites-inventory.csv` — CSV data for scripting exercises
+  - `deploy-sites.sh` — Sample deployment script
+- **`.claude/`** — Claude Code project configuration (committed to share settings across sessions)
+  - `settings.json` — Shared project settings (model, permissions, hooks, sandbox)
+  - `settings.local.json` — Personal overrides (git-ignored)
+  - `SETTINGS-GUIDE.md` — Documentation for the settings configuration
 
 ## When Adding Documentation
 
@@ -35,12 +47,22 @@ This is a **documentation-focused DevOps learning playground** dedicated to inte
 - Automation and deployment practices
 - Interview storytelling and communication skills
 
+## Claude Code Configuration
+
+The `.claude/` directory is version-controlled to share project settings across sessions. Key points:
+
+- **`settings.json`** is the shared config — edit it to change model, permissions, hooks, or sandbox rules for the project.
+- **`settings.local.json`** is for personal overrides and is git-ignored.
+- A **PreToolUse hook** logs all Bash tool invocations (with timestamps) to `.claude/hooks.log`. This file is git-ignored via the `*.log` pattern.
+- The sandbox restricts filesystem writes and network access. See `.claude/SETTINGS-GUIDE.md` for details.
+
 ## For Future Contributors
 
 - **Keep exercises runnable:** All code examples should be copy-paste ready
 - **Include expected output:** Show what correct execution looks like
 - **Reference the job description:** Tie learning content back to the actual role requirements in `start-from-here.md`
-- **Update memory if discovering new insights:** This repo was created to prepare for a specific interview; document any improvements to the learning approach in `/home/pluto-atom-4/.claude/projects/-home-pluto-atom-4-Documents-devops-scripting-playground/memory/` if they'd be useful for future sessions
+- **Use `sample-data/` for practice files:** Add realistic configs, logs, or scripts there rather than creating ad-hoc files elsewhere
+- **Update memory if discovering new insights:** This repo was created to prepare for a specific interview; document any improvements to the learning approach in the Claude Code memory directory if they'd be useful for future sessions
 
 ## No Build/Test/Deployment Process
 

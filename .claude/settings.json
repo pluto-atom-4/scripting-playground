@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+
+  "model": "claude-opus-4-1",
+  "defaultMode": "plan",
+
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git pull)",
+      "Edit(docs/**)",
+      "Edit(CLAUDE.md)",
+      "Edit(.claude/**)",
+      "Read(.)"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Read(secrets/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.kube/config)",
+      "Read(**/*.key)",
+      "Read(**/*.pem)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/credentials*)",
+      "Read(**/token*)",
+      "Read(private/**)",
+      "Bash(sudo *)",
+      "Bash(su *)",
+      "Bash(curl -u *)",
+      "Bash(wget -u *)"
+    ]
+  },
+
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "denyWrite": [
+        "/etc",
+        "/usr/bin",
+        "/usr/local/bin",
+        "/system",
+        "/root"
+      ],
+      "denyRead": [
+        "~/.aws",
+        "~/.ssh",
+        "~/.kube",
+        "~/.gnupg"
+      ],
+      "allowRead": ["."]
+    },
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "api.github.com",
+        "npmjs.com",
+        "registry.npmjs.org"
+      ]
+    },
+    "failIfUnavailable": false
+  },
+
+  "disableBypassPermissionsMode": false,
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"$(date '+%Y-%m-%d %H:%M:%S') PreToolUse Bash: $CLAUDE_TOOL_INPUT\" >> .claude/hooks.log"
+          }
+        ]
+      }
+    ]
+  }
+}
