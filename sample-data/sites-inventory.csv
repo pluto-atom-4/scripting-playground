@@ -1,0 +1,11 @@
+site_id,site_name,site_url,admin_email,wordpress_version,last_backup,status,php_version,ssl_certificate,disk_usage_gb
+1,history.example.edu,https://history.example.edu,admin@history.example.edu,6.4.2,2026-04-01,active,8.1,valid,2.3
+2,admissions.example.edu,https://admissions.example.edu,admin@admissions.example.edu,6.4.1,2026-03-31,active,8.0,expiring,5.1
+3,research.example.edu,https://research.example.edu,admin@research.example.edu,6.3.1,2026-03-29,active,7.4,valid,1.8
+4,events.example.edu,https://events.example.edu,events@example.edu,6.4.2,2026-04-01,active,8.1,valid,0.9
+5,legacy.example.edu,https://legacy.example.edu,admin@legacy.example.edu,5.9.0,2026-02-15,inactive,7.2,expired,3.2
+6,blog.example.edu,https://blog.example.edu,blog@example.edu,6.4.2,2026-04-01,active,8.1,valid,4.5
+7,library.example.edu,https://library.example.edu,lib@example.edu,6.4.0,2026-03-30,active,8.0,valid,12.1
+8,student-portal.example.edu,https://student-portal.example.edu,it@example.edu,6.4.2,2026-04-01,active,8.1,valid,8.7
+9,alumni.example.edu,https://alumni.example.edu,alumni@example.edu,6.2.0,2026-03-25,maintenance,7.4,valid,2.1
+10,temporary.example.edu,https://temporary.example.edu,admin@example.edu,6.0.0,2026-01-15,decommissioned,7.0,invalid,0.5
