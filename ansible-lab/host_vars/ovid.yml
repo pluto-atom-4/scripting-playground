@@ -1,0 +1,26 @@
+---
+# Host-specific variables for Ovid (Apache web server)
+#
+# These override group_vars/webservers.yml for this host only.
+# See: https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html#organizing-host-and-group-variables
+
+# Override the default site title for this host
+site_title: "UW-IT Managed Host - Ovid"
+
+# Apache tuning (Ovid-specific)
+apache_mpm_start_servers: 2
+apache_mpm_min_spare_threads: 25
+apache_mpm_max_spare_threads: 75
+apache_mpm_max_request_workers: 150
+
+# Virtual hosts to configure on this server
+apache_vhosts:
+  - server_name: ovid.local
+    document_root: /var/www/html
+    server_admin: admin@localhost
+
+# PHP settings (can override php.ini values via playbook)
+php_memory_limit: "512M"
+php_max_execution_time: 300
+php_upload_max_filesize: "64M"
+php_post_max_size: "64M"

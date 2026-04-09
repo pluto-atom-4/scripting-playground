@@ -1,0 +1,30 @@
+FROM debian:bookworm-slim
+
+# Install SSH server + Python (Ansible requires Python on managed nodes)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        openssh-server \
+        python3 \
+        python3-apt \
+        sudo \
+        systemctl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Configure SSH
+RUN mkdir /var/run/sshd && \
+    echo 'PermitRootLogin no' >> /etc/ssh/sshd_config && \
+    echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config && \
+    echo 'PubkeyAuthentication yes' >> /etc/ssh/sshd_config
+
+# Create an ansible user with sudo privileges
+RUN useradd -m -s /bin/bash ansible && \
+    echo 'ansible ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/ansible && \
+    chmod 0440 /etc/sudoers.d/ansible
+
+# Prepare SSH directory for the ansible user
+RUN mkdir -p /home/ansible/.ssh && \
+    chmod 700 /home/ansible/.ssh && \
+    chown ansible:ansible /home/ansible/.ssh
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]

@@ -1,0 +1,17 @@
+# .ansible-lint — configuration for ansible-lint
+# Run with: ansible-lint playbooks/
+
+skip_list:
+  - yaml[truthy]            # Allow bare true/false in YAML
+  - command-instead-of-shell # Allow shell when piping is needed
+  - no-changed-when          # Some container workarounds need changed_when: true
+
+warn_list:
+  - experimental             # Show experimental rules as warnings
+
+exclude_paths:
+  - .venv/
+  - roles/
+
+enable_list:
+  - fqcn                     # Enforce fully qualified collection names
