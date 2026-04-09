@@ -10,7 +10,7 @@
 
 **This guide uses real data files for hands-on practice.** All exercises reference files in `sample-data/`:
 - `access.log`, `error.log`, `backup.log` — Real log files for shell scripting practice
-- `wordpress.sql` — WordPress database schema for SQL exercises
+- `wordpress-sqlite.sql` — WordPress database schema for SQL exercises
 - `vhost.conf`, `php.ini`, `backup.conf` — Configuration files for parsing
 - `sites-inventory.csv` — Inventory of 10 WordPress sites for analysis
 - Plus more in `sample-data/PRACTICE-EXERCISES.md` for additional scenarios
@@ -141,11 +141,11 @@ This role is **operationally focused** — you'll support ~29,000 websites in a 
 
 1. **Setup and load WordPress database** (15 min)
    
-   **Use the pre-built WordPress sample data:** `sample-data/wordpress.sql`
+   **Use the pre-built WordPress sample data:** `sample-data/wordpress-sqlite.sql`
    
    ```bash
    # Create a SQLite database for lightweight practice (no Docker needed)
-   sqlite3 db/wordpress_practice.db < sample-data/wordpress.sql
+   sqlite3 db/wordpress_practice.db < sample-data/wordpress-sqlite.sql
    
    # Verify tables were created
    sqlite3 db/wordpress_practice.db ".tables"
@@ -222,7 +222,7 @@ This role is **operationally focused** — you'll support ~29,000 websites in a 
 
 2. **Common WordPress Issues You'll Support** (30 min)
    
-   **Practice log analysis:** Use `sample-data/error.log`, `sample-data/access.log`, and loaded `wordpress.sql` database
+   **Practice log analysis:** Use `sample-data/error.log`, `sample-data/access.log`, and loaded `wordpress-sqlite.sql` database
    
    ```
    a) "Site won't load" scenarios:
