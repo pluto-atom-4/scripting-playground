@@ -1,0 +1,116 @@
+---
+- name: Configure database backups on Vergil
+  hosts: dbservers
+  become: true
+
+  vars:
+    backup_dir: /var/backups/mysql
+    backup_retention_days: 7
+    backup_hour: 2
+    backup_minute: 0
+    backup_databases: "{{ mysql_databases | map(attribute='name') | list }}"
+    backup_user: root
+
+  tasks:
+    - name: Create backup directory
+      ansible.builtin.file:
+        path: "{{ backup_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Deploy backup script
+      ansible.builtin.copy:
+        dest: /usr/local/bin/mysql-backup.sh
+        content: |
+          #!/bin/bash
+          # MySQL backup script — deployed by Ansible
+          # Backs up each database to a timestamped gzip file
+
+          set -euo pipefail
+
+          BACKUP_DIR="{{ backup_dir }}"
+          RETENTION_DAYS="{{ backup_retention_days }}"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          LOG="/var/log/uwit/mysql-backup.log"
+
+          echo "[${TIMESTAMP}] Starting MySQL backup" >> "$LOG"
+
+          {% for db in backup_databases %}
+          echo "[${TIMESTAMP}] Backing up {{ db }}..." >> "$LOG"
+          mysqldump --single-transaction --routines --triggers \
+              {{ db }} | gzip > "${BACKUP_DIR}/{{ db }}_${TIMESTAMP}.sql.gz"
+          {% endfor %}
+
+          # Prune old backups
+          find "$BACKUP_DIR" -name "*.sql.gz" -mtime +"$RETENTION_DAYS" -delete
+
+          echo "[${TIMESTAMP}] Backup complete" >> "$LOG"
+        mode: "0750"
+
+    - name: Ensure log directory exists
+      ansible.builtin.file:
+        path: /var/log/uwit
+        state: directory
+        owner: root
+        group: adm
+        mode: "0750"
+
+    - name: Schedule nightly backup cron job
+      ansible.builtin.cron:
+        name: "MySQL nightly backup"
+        hour: "{{ backup_hour }}"
+        minute: "{{ backup_minute }}"
+        job: "/usr/local/bin/mysql-backup.sh"
+        user: root
+
+- name: Configure web content backups on Ovid
+  hosts: webservers
+  become: true
+
+  vars:
+    web_backup_dir: /var/backups/www
+    web_backup_retention_days: 7
+    web_document_root: /var/www/html
+
+  tasks:
+    - name: Create web backup directory
+      ansible.builtin.file:
+        path: "{{ web_backup_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Deploy web backup script
+      ansible.builtin.copy:
+        dest: /usr/local/bin/web-backup.sh
+        content: |
+          #!/bin/bash
+          # Web content backup script — deployed by Ansible
+          set -euo pipefail
+
+          BACKUP_DIR="{{ web_backup_dir }}"
+          RETENTION_DAYS="{{ web_backup_retention_days }}"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          LOG="/var/log/uwit/web-backup.log"
+
+          echo "[${TIMESTAMP}] Starting web backup" >> "$LOG"
+
+          tar czf "${BACKUP_DIR}/www_${TIMESTAMP}.tar.gz" \
+              -C {{ web_document_root }} .
+
+          # Prune old backups
+          find "$BACKUP_DIR" -name "*.tar.gz" -mtime +"$RETENTION_DAYS" -delete
+
+          echo "[${TIMESTAMP}] Web backup complete" >> "$LOG"
+        mode: "0750"
+
+    - name: Schedule nightly web backup
+      ansible.builtin.cron:
+        name: "Web content nightly backup"
+        hour: "3"
+        minute: "0"
+        job: "/usr/local/bin/web-backup.sh"
+        user: root

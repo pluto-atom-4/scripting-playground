@@ -1,0 +1,88 @@
+---
+- name: Security hardening for UW-IT managed hosts
+  hosts: all
+  become: true
+
+  vars:
+    ssh_port: 22
+    ssh_permit_root_login: "no"
+    ssh_password_authentication: "no"
+    ssh_max_auth_tries: 3
+
+    firewall_allowed_tcp_ports:
+      - "{{ ssh_port }}"
+
+  tasks:
+    # --- SSH Hardening ---
+    - name: Harden SSH - disable root login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin {{ ssh_permit_root_login }}"
+        validate: "sshd -t -f %s"
+      notify: restart sshd
+
+    - name: Harden SSH - disable password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PasswordAuthentication"
+        line: "PasswordAuthentication {{ ssh_password_authentication }}"
+        validate: "sshd -t -f %s"
+      notify: restart sshd
+
+    - name: Harden SSH - limit auth attempts
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?MaxAuthTries"
+        line: "MaxAuthTries {{ ssh_max_auth_tries }}"
+        validate: "sshd -t -f %s"
+      notify: restart sshd
+
+    # --- Fail2ban ---
+    - name: Install fail2ban
+      ansible.builtin.apt:
+        name: fail2ban
+        state: present
+
+    - name: Configure fail2ban jail for SSH
+      ansible.builtin.copy:
+        dest: /etc/fail2ban/jail.local
+        content: |
+          [sshd]
+          enabled = true
+          port = {{ ssh_port }}
+          filter = sshd
+          logpath = /var/log/auth.log
+          maxretry = 5
+          bantime = 3600
+          findtime = 600
+        mode: "0644"
+      notify: restart fail2ban
+
+    # --- Unattended upgrades ---
+    - name: Install unattended-upgrades
+      ansible.builtin.apt:
+        name:
+          - unattended-upgrades
+          - apt-listchanges
+        state: present
+
+    - name: Enable automatic security updates
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+          APT::Periodic::AutocleanInterval "7";
+        mode: "0644"
+
+  handlers:
+    - name: restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+
+    - name: restart fail2ban
+      ansible.builtin.service:
+        name: fail2ban
+        state: restarted

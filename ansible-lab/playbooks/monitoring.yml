@@ -1,0 +1,117 @@
+---
+- name: Set up basic monitoring and health checks
+  hosts: all
+  become: true
+
+  vars:
+    monitoring_check_interval: 300    # seconds
+    monitoring_log: /var/log/uwit/health-check.log
+    disk_usage_threshold: 85
+
+  tasks:
+    - name: Deploy health check script
+      ansible.builtin.copy:
+        dest: /usr/local/bin/health-check.sh
+        content: |
+          #!/bin/bash
+          # Basic health check script — deployed by Ansible
+          set -euo pipefail
+
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+          LOG="{{ monitoring_log }}"
+          THRESHOLD={{ disk_usage_threshold }}
+          STATUS="OK"
+
+          # Check disk usage
+          DISK_USAGE=$(df / --output=pcent | tail -1 | tr -d ' %')
+          if [ "$DISK_USAGE" -gt "$THRESHOLD" ]; then
+              echo "[$TIMESTAMP] WARNING: Disk usage at ${DISK_USAGE}% (threshold: ${THRESHOLD}%)" >> "$LOG"
+              STATUS="WARNING"
+          fi
+
+          # Check memory usage
+          MEM_AVAILABLE=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
+          MEM_TOTAL=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
+          MEM_USED_PCT=$((100 - (MEM_AVAILABLE * 100 / MEM_TOTAL)))
+          if [ "$MEM_USED_PCT" -gt 90 ]; then
+              echo "[$TIMESTAMP] WARNING: Memory usage at ${MEM_USED_PCT}%" >> "$LOG"
+              STATUS="WARNING"
+          fi
+
+          # Check load average
+          LOAD=$(awk '{print $1}' /proc/loadavg)
+          CPUS=$(nproc)
+          LOAD_INT=${LOAD%.*}
+          if [ "${LOAD_INT:-0}" -gt "$CPUS" ]; then
+              echo "[$TIMESTAMP] WARNING: Load average $LOAD exceeds CPU count $CPUS" >> "$LOG"
+              STATUS="WARNING"
+          fi
+
+          echo "[$TIMESTAMP] Health check: $STATUS (disk:${DISK_USAGE}% mem:${MEM_USED_PCT}% load:${LOAD})" >> "$LOG"
+        mode: "0755"
+
+    - name: Schedule health check cron
+      ansible.builtin.cron:
+        name: "System health check"
+        minute: "*/5"
+        job: "/usr/local/bin/health-check.sh"
+        user: root
+
+- name: Monitor Apache on web servers
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Deploy Apache health check
+      ansible.builtin.copy:
+        dest: /usr/local/bin/apache-check.sh
+        content: |
+          #!/bin/bash
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+          LOG="/var/log/uwit/apache-check.log"
+
+          HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/ 2>/dev/null || echo "000")
+          ACTIVE_CONNS=$(ss -tnp | grep -c ":80" || echo "0")
+
+          if [ "$HTTP_CODE" != "200" ]; then
+              echo "[$TIMESTAMP] CRITICAL: Apache returned HTTP $HTTP_CODE" >> "$LOG"
+          else
+              echo "[$TIMESTAMP] OK: HTTP $HTTP_CODE, active connections: $ACTIVE_CONNS" >> "$LOG"
+          fi
+        mode: "0755"
+
+    - name: Schedule Apache check
+      ansible.builtin.cron:
+        name: "Apache health check"
+        minute: "*/5"
+        job: "/usr/local/bin/apache-check.sh"
+        user: root
+
+- name: Monitor MySQL on database servers
+  hosts: dbservers
+  become: true
+
+  tasks:
+    - name: Deploy MySQL health check
+      ansible.builtin.copy:
+        dest: /usr/local/bin/mysql-check.sh
+        content: |
+          #!/bin/bash
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+          LOG="/var/log/uwit/mysql-check.log"
+
+          if mysqladmin ping --silent 2>/dev/null; then
+              THREADS=$(mysql -N -e "SHOW STATUS LIKE 'Threads_connected';" 2>/dev/null | awk '{print $2}')
+              SLOW=$(mysql -N -e "SHOW STATUS LIKE 'Slow_queries';" 2>/dev/null | awk '{print $2}')
+              echo "[$TIMESTAMP] OK: MySQL running, threads:${THREADS:-?}, slow_queries:${SLOW:-?}" >> "$LOG"
+          else
+              echo "[$TIMESTAMP] CRITICAL: MySQL is not responding" >> "$LOG"
+          fi
+        mode: "0755"
+
+    - name: Schedule MySQL check
+      ansible.builtin.cron:
+        name: "MySQL health check"
+        minute: "*/5"
+        job: "/usr/local/bin/mysql-check.sh"
+        user: root

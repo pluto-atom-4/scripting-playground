@@ -1,0 +1,20 @@
+---
+# site.yml — Full stack provisioning for UW-IT managed hosts
+#
+# Usage:
+#   ansible-playbook playbooks/site.yml              # Full run
+#   ansible-playbook playbooks/site.yml --tags web    # Apache only
+#   ansible-playbook playbooks/site.yml --tags db     # MySQL only
+#   ansible-playbook playbooks/site.yml --check       # Dry run
+
+- name: Apply common baseline to all hosts
+  import_playbook: common.yml
+  tags: common
+
+- name: Provision Apache on web servers
+  import_playbook: apache.yml
+  tags: web
+
+- name: Provision MySQL on database servers
+  import_playbook: mysql.yml
+  tags: db

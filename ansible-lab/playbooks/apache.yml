@@ -1,0 +1,62 @@
+---
+- name: Provision Apache web server (Ovid)
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install Apache and PHP packages
+      ansible.builtin.apt:
+        name: "{{ apache_packages }}"
+        state: present
+
+    - name: Enable Apache modules
+      ansible.builtin.command:
+        cmd: "a2enmod {{ item }}"
+      loop:
+        - rewrite
+        - ssl
+        - headers
+      register: mod_result
+      changed_when: "'already enabled' not in mod_result.stdout"
+
+    - name: Create a test index page
+      ansible.builtin.copy:
+        dest: /var/www/html/index.html
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head><title>{{ site_title }}</title></head>
+          <body>
+            <h1>{{ site_title }}</h1>
+            <p>Apache provisioned by Ansible.</p>
+            <p>Server: {{ inventory_hostname }}</p>
+          </body>
+          </html>
+        owner: www-data
+        group: www-data
+        mode: "0644"
+
+    - name: Create PHP info page (for verification)
+      ansible.builtin.copy:
+        dest: /var/www/html/info.php
+        content: |
+          <?php phpinfo(); ?>
+        owner: www-data
+        group: www-data
+        mode: "0644"
+
+    - name: Ensure Apache is started
+      ansible.builtin.service:
+        name: "{{ apache_service }}"
+        state: started
+
+    - name: Start Apache directly (container workaround)
+      ansible.builtin.command:
+        cmd: apachectl start
+      changed_when: true
+      when: ansible_virtualization_type | default('') == "docker"

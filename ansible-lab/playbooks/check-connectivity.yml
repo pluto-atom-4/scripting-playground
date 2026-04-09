@@ -1,0 +1,27 @@
+---
+# Quick connectivity and facts check — useful for verifying the lab is working
+#
+# Usage:
+#   ansible-playbook playbooks/check-connectivity.yml
+#   ansible-playbook playbooks/check-connectivity.yml --limit ovid
+
+- name: Verify connectivity and gather host facts
+  hosts: all
+  become: false
+  gather_facts: true
+
+  tasks:
+    - name: Ping all hosts
+      ansible.builtin.ping:
+
+    - name: Display basic host info
+      ansible.builtin.debug:
+        msg: |
+          Hostname: {{ inventory_hostname }}
+          OS: {{ ansible_distribution | default('unknown') }} {{ ansible_distribution_version | default('') }}
+          Kernel: {{ ansible_kernel | default('unknown') }}
+          Python: {{ ansible_python_version | default('unknown') }}
+          Architecture: {{ ansible_architecture | default('unknown') }}
+          Memory: {{ ansible_memtotal_mb | default('unknown') }} MB
+          vCPUs: {{ ansible_processor_vcpus | default('unknown') }}
+          IPv4: {{ ansible_default_ipv4.address | default('N/A') }}
