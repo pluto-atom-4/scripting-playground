@@ -1,0 +1,62 @@
+---
+- name: Common baseline configuration for all hosts
+  hosts: all
+  become: true
+
+  vars:
+    common_packages:
+      - curl
+      - wget
+      - vim
+      - htop
+      - unzip
+      - git
+      - ca-certificates
+      - gnupg
+      - lsb-release
+
+    timezone: America/Los_Angeles    # UW is in Pacific time
+
+    ntp_servers:
+      - time.uw.edu
+      - 0.us.pool.ntp.org
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Upgrade all packages to latest
+      ansible.builtin.apt:
+        upgrade: safe
+      when: common_upgrade_packages | default(false)
+
+    - name: Install common packages
+      ansible.builtin.apt:
+        name: "{{ common_packages }}"
+        state: present
+
+    - name: Set timezone
+      community.general.timezone:
+        name: "{{ timezone }}"
+
+    - name: Set hostname from inventory
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Add inventory hosts to /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: ".*{{ item }}$"
+        line: "{{ hostvars[item].ansible_host }} {{ item }}"
+        state: present
+      loop: "{{ groups['all'] }}"
+
+    - name: Ensure log directory exists
+      ansible.builtin.file:
+        path: /var/log/uwit
+        state: directory
+        owner: root
+        group: adm
+        mode: "0750"

@@ -20,6 +20,26 @@ This is a **documentation-focused DevOps learning playground** dedicated to inte
   - `wordpress.sql` — Sample SQL for database query practice
   - `sites-inventory.csv` — CSV data for scripting exercises
   - `deploy-sites.sh` — Sample deployment script
+- **`ansible-lab/`** — Hands-on Ansible practice environment (provisioning Apache & MySQL)
+  - Managed with `uv` and `pyproject.toml`, pinned to Python 3.11
+  - `inventory/hosts.yml` — Two target hosts: ovid (webserver) and vergil (dbserver)
+  - `group_vars/` — Shared variables per host group (webservers, dbservers)
+  - `host_vars/` — Per-host overrides for ovid and vergil
+  - `playbooks/` — Ansible playbooks:
+    - `site.yml` — Master playbook (runs common + apache + mysql, supports `--tags`)
+    - `common.yml` — Baseline packages, timezone, hostname
+    - `apache.yml` — Apache + PHP provisioning
+    - `mysql.yml` — MariaDB + database/user creation
+    - `wordpress.yml` — Full WordPress deployment with templated wp-config
+    - `security.yml` — SSH hardening, fail2ban, unattended-upgrades
+    - `backup.yml` — Nightly MySQL dump + web content backup via cron
+    - `monitoring.yml` — Health checks for disk, memory, load, Apache, MySQL
+    - `check-connectivity.yml` — Verify SSH access and display host facts
+  - `templates/wp-config.php.j2` — Jinja2 template for WordPress configuration
+  - `Dockerfile.target` — SSH-enabled Debian container used as Ansible target node
+  - `requirements.yml` — Ansible Galaxy collection dependencies
+  - `ansible.cfg` — Project-level Ansible configuration
+  - See `docs/ansible-practice-guide.md` for the full step-by-step walkthrough
 - **`.claude/`** — Claude Code project configuration (committed to share settings across sessions)
   - `settings.json` — Shared project settings (model, permissions, hooks, sandbox)
   - `settings.local.json` — Personal overrides (git-ignored)
@@ -44,8 +64,19 @@ This is a **documentation-focused DevOps learning playground** dedicated to inte
 - WordPress hosting and LAMP stack administration
 - Linux system administration and troubleshooting
 - Incident response and operational reliability
-- Automation and deployment practices
+- Automation and deployment practices (Ansible, configuration management)
 - Interview storytelling and communication skills
+
+## Ansible Lab
+
+The `ansible-lab/` directory is a self-contained Ansible project for practicing infrastructure provisioning against local Docker containers. Key points:
+
+- **Python environment:** Managed by `uv` with `pyproject.toml`, pinned to Python 3.11 (widely used at UW, fewest dependency conflicts with Ansible).
+- **Target nodes:** Two rootless Docker containers (`ovid` for Apache, `vergil` for MariaDB) built from `Dockerfile.target`.
+- **Setup:** Run `cd ansible-lab && uv sync && ansible-galaxy install -r requirements.yml` to bootstrap.
+- **Running playbooks:** `uv run ansible-playbook playbooks/site.yml` (or activate the venv first with `source .venv/bin/activate`).
+- **Local-only values:** Host vars use `.local` domains and `admin@localhost` — no real UW addresses.
+- **Guide:** `docs/ansible-practice-guide.md` has the full step-by-step walkthrough from Docker setup through verification.
 
 ## Claude Code Configuration
 
@@ -62,6 +93,7 @@ The `.claude/` directory is version-controlled to share project settings across 
 - **Include expected output:** Show what correct execution looks like
 - **Reference the job description:** Tie learning content back to the actual role requirements in `start-from-here.md`
 - **Use `sample-data/` for practice files:** Add realistic configs, logs, or scripts there rather than creating ad-hoc files elsewhere
+- **Keep ansible-lab self-contained:** Playbooks, templates, and inventory stay within `ansible-lab/`. Use `host_vars/` for per-host overrides, `group_vars/` for group-wide defaults. Use `.local` domains and dummy credentials — never real UW addresses.
 - **Update memory if discovering new insights:** This repo was created to prepare for a specific interview; document any improvements to the learning approach in the Claude Code memory directory if they'd be useful for future sessions
 
 ## No Build/Test/Deployment Process

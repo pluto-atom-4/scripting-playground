@@ -1,0 +1,78 @@
+---
+- name: Provision MySQL (MariaDB) database server (Vergil)
+  hosts: dbservers
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install MariaDB packages
+      ansible.builtin.apt:
+        name: "{{ mysql_packages }}"
+        state: present
+
+    - name: Start MariaDB directly (container workaround)
+      ansible.builtin.shell: |
+        mysqld_safe --skip-grant-tables &
+        sleep 3
+      args:
+        creates: /var/run/mysqld/mysqld.pid
+      changed_when: true
+
+    - name: Ensure MariaDB data directory has correct ownership
+      ansible.builtin.file:
+        path: /var/lib/mysql
+        owner: mysql
+        group: mysql
+        state: directory
+        recurse: true
+
+    - name: Initialize MariaDB (if needed)
+      ansible.builtin.command:
+        cmd: mysql_install_db --user=mysql
+        creates: /var/lib/mysql/mysql
+
+    - name: Start MariaDB properly
+      ansible.builtin.shell: |
+        pkill -f mysqld || true
+        sleep 1
+        mysqld_safe &
+        sleep 3
+      changed_when: true
+
+    - name: Create application databases
+      community.mysql.mysql_db:
+        name: "{{ item.name }}"
+        encoding: "{{ item.encoding }}"
+        collation: "{{ item.collation }}"
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      loop: "{{ mysql_databases }}"
+
+    - name: Create application users
+      community.mysql.mysql_user:
+        name: "{{ item.name }}"
+        password: "{{ item.password }}"
+        host: "{{ item.host }}"
+        priv: "{{ item.priv }}"
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      loop: "{{ mysql_users }}"
+      no_log: true
+
+    - name: Import WordPress schema (if sample SQL exists on control node)
+      ansible.builtin.shell: |
+        mysql -u root wp_uwit < /tmp/wordpress.sql
+      args:
+        creates: /tmp/.wp_schema_imported
+      ignore_errors: true
+      register: import_result
+
+    - name: Mark schema as imported
+      ansible.builtin.file:
+        path: /tmp/.wp_schema_imported
+        state: touch
+      when: import_result is succeeded

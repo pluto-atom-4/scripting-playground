@@ -1,0 +1,12 @@
+---
+# Apache configuration variables
+apache_packages:
+  - apache2
+  - libapache2-mod-php
+  - php
+  - php-mysql
+
+apache_service: apache2
+
+# A simple index page to verify the install
+site_title: "UW-IT Managed Host - Ovid"

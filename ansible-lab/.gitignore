@@ -1,0 +1,6 @@
+.venv/
+.uv-cache/
+ansible_key
+ansible_key.pub
+*.retry
+*.log

@@ -1,0 +1,20 @@
+---
+# Host-specific variables for Vergil (MySQL/MariaDB database server)
+#
+# These override group_vars/dbservers.yml for this host only.
+# See: https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html#organizing-host-and-group-variables
+
+# MariaDB tuning (Vergil-specific)
+mysql_innodb_buffer_pool_size: "256M"
+mysql_max_connections: 100
+mysql_query_cache_size: "16M"
+mysql_tmp_table_size: "32M"
+mysql_max_heap_table_size: "32M"
+
+# Backup settings for this host
+mysql_backup_enabled: true
+mysql_backup_dir: /var/backups/mysql
+mysql_backup_retention_days: 7
+
+# Databases managed on this host (extends group_vars list)
+mysql_extra_databases: []

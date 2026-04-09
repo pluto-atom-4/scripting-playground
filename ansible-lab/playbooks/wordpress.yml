@@ -1,0 +1,101 @@
+---
+- name: Deploy WordPress on web servers
+  hosts: webservers
+  become: true
+
+  vars:
+    wp_version: "latest"
+    wp_install_dir: /var/www/html/wordpress
+    wp_db_host: "{{ hostvars['vergil'].ansible_host }}:3306"
+    wp_db_name: wp_uwit
+    wp_db_user: wp_admin
+    wp_db_password: "ChangeMe_2026!"
+    wp_site_url: "http://ovid.local"
+    wp_site_title: "UW-IT WordPress"
+    wp_admin_user: wpadmin
+    wp_admin_email: admin@localhost
+    wp_table_prefix: "wp_"
+
+  tasks:
+    - name: Install PHP extensions for WordPress
+      ansible.builtin.apt:
+        name:
+          - php-mysql
+          - php-gd
+          - php-curl
+          - php-xml
+          - php-mbstring
+          - php-zip
+          - php-intl
+          - php-imagick
+        state: present
+      notify: restart apache
+
+    - name: Download WordPress
+      ansible.builtin.get_url:
+        url: "https://wordpress.org/{{ wp_version }}.tar.gz"
+        dest: /tmp/wordpress.tar.gz
+        mode: "0644"
+      when: wp_version == "latest"
+
+    - name: Extract WordPress
+      ansible.builtin.unarchive:
+        src: /tmp/wordpress.tar.gz
+        dest: /var/www/html/
+        remote_src: true
+        creates: "{{ wp_install_dir }}/wp-settings.php"
+
+    - name: Set WordPress file ownership
+      ansible.builtin.file:
+        path: "{{ wp_install_dir }}"
+        owner: www-data
+        group: www-data
+        recurse: true
+
+    - name: Deploy wp-config.php
+      ansible.builtin.template:
+        src: ../templates/wp-config.php.j2
+        dest: "{{ wp_install_dir }}/wp-config.php"
+        owner: www-data
+        group: www-data
+        mode: "0640"
+
+    - name: Create WordPress uploads directory
+      ansible.builtin.file:
+        path: "{{ wp_install_dir }}/wp-content/uploads"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Deploy Apache vhost for WordPress
+      ansible.builtin.copy:
+        dest: /etc/apache2/sites-available/wordpress.conf
+        content: |
+          <VirtualHost *:80>
+              ServerName {{ wp_site_url | regex_replace('https?://', '') }}
+              DocumentRoot {{ wp_install_dir }}
+
+              <Directory {{ wp_install_dir }}>
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+
+              ErrorLog ${APACHE_LOG_DIR}/wordpress-error.log
+              CustomLog ${APACHE_LOG_DIR}/wordpress-access.log combined
+          </VirtualHost>
+        mode: "0644"
+      notify: restart apache
+
+    - name: Enable WordPress site
+      ansible.builtin.command:
+        cmd: a2ensite wordpress.conf
+      register: ensite_result
+      changed_when: "'already enabled' not in ensite_result.stdout"
+      notify: restart apache
+
+  handlers:
+    - name: restart apache
+      ansible.builtin.service:
+        name: apache2
+        state: restarted
