@@ -101,26 +101,28 @@ docker run --rm hello-world
 
 ### Step 3.1 — Create a Python virtual environment
 
-Using a venv keeps your system Python clean.
+Using `uv` provides fast, reliable virtual environment and dependency management. If `uv` is not installed, see the [uv documentation](https://docs.astral.sh/uv/getting-started/installation/).
 
 ```bash
 # Create a project directory for this exercise
 mkdir -p ~/ansible-lab && cd ~/ansible-lab
 
-# Create and activate a virtual environment
-python3 -m venv .venv
+# Create a virtual environment with uv (pinned to Python 3.11 for stability)
+uv venv --python 3.11 .venv
+
+# Activate the virtual environment
 source .venv/bin/activate
 ```
 
-### Step 3.2 — Install Ansible via pip
+### Step 3.2 — Install Ansible via uv
 
 ```bash
-pip install --upgrade pip
-pip install ansible
+# Install Ansible using uv
+uv pip install ansible
 
 # Verify
 ansible --version
-# Expected: ansible [core 2.x.x] with Python 3.x
+# Expected: ansible [core 2.x.x] with Python 3.11.x
 ```
 
 ### Step 3.3 — (Optional) Install the community.docker collection
