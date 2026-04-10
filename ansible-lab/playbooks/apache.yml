@@ -55,8 +55,14 @@
         name: "{{ apache_service }}"
         state: started
 
+    - name: Check if Apache is running
+      ansible.builtin.command:
+        cmd: pgrep -f apache2
+      register: apache_check
+      failed_when: false
+      changed_when: false
+
     - name: Start Apache directly (container workaround)
       ansible.builtin.command:
         cmd: apachectl start
-      changed_when: true
-      when: ansible_virtualization_type | default('') == "docker"
+      when: apache_check.rc != 0
