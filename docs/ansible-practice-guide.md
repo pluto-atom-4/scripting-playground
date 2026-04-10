@@ -778,7 +778,7 @@ docker exec vergil mysql -u wp_admin -p'ChangeMe_2026!' -e "SHOW GRANTS FOR 'wp_
 
 ### Step 9.1 — Create `playbooks/site.yml`
 
-This is the **master playbook** that provisions the full stack in one run.
+This is the **master playbook** that provisions the full stack in one run. It orchestrates all component playbooks with support for targeted tags.
 
 ```yaml
 ---
@@ -788,6 +788,11 @@ This is the **master playbook** that provisions the full stack in one run.
 #   ansible-playbook playbooks/site.yml              # Full run
 #   ansible-playbook playbooks/site.yml --tags web    # Apache only
 #   ansible-playbook playbooks/site.yml --tags db     # MySQL only
+#   ansible-playbook playbooks/site.yml --check       # Dry run
+
+- name: Apply common baseline to all hosts
+  import_playbook: common.yml
+  tags: common
 
 - name: Provision Apache on web servers
   import_playbook: apache.yml
@@ -797,6 +802,11 @@ This is the **master playbook** that provisions the full stack in one run.
   import_playbook: mysql.yml
   tags: db
 ```
+
+**What it does:**
+- **common.yml** - Baseline setup for all hosts (packages, timezone, hostname)
+- **apache.yml** - Apache + PHP provisioning for webservers group (ovid)
+- **mysql.yml** - MariaDB provisioning for dbservers group (vergil)
 
 ### Step 9.2 — Run the full stack
 
