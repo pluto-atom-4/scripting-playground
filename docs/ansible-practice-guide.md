@@ -733,20 +733,30 @@ ansible-playbook playbooks/mysql.yml
 Expected output (abbreviated):
 
 ```
-PLAY [Provision MySQL (MariaDB) database server (Vergil)] ********************
+PLAY [Provision MySQL (MariaDB) database server (Vergil)] *******************************************************************
 
-TASK [Install MariaDB packages] ***********************************************
+TASK [Create application databases] *****************************************************************************************
+[WARNING]: Support of mysqlcline/MySQLdb connector is deprecated. We'll stop testing against it in collection version 4.0.0 and remove the related code in 5.0.0. Use PyMySQL connector instead.
+ok: [vergil] => (item={'name': 'wp_debian', 'encoding': 'utf8mb4', 'collation': 'utf8mb4_unicode_ci'})
+
+TASK [Create application users] *********************************************************************************************
+[WARNING]: Option column_case_sensitive is not provided. The default is now false, so the column's name will be uppercased. The default will be changed to true in community.mysql 4.0.0.
+ok: [vergil] => (item=(censored due to no_log))
+
+TASK [Copy WordPress schema to target] **************************************************************************************
 changed: [vergil]
 
-TASK [Create application databases] *******************************************
-changed: [vergil] => (item={'name': 'wp_uwit', ...})
-
-TASK [Create application users] ***********************************************
+TASK [Import WordPress schema into wp_debian] *******************************************************************************
 changed: [vergil]
 
-PLAY RECAP ********************************************************************
-vergil : ok=8    changed=6    unreachable=0    failed=0
+TASK [Mark schema as imported] **********************************************************************************************
+changed: [vergil]
+
+PLAY RECAP ******************************************************************************************************************
+vergil                     : ok=11   changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
+Note: The two warnings (MySQLdb connector deprecated and column_case_sensitive) come from the community.mysql collection and are
+   informational — they'll go away when the collection is updated to use PyMySQL. Not actionable for now.
 
 ### Step 8.5 — Verify MySQL is working
 
@@ -755,7 +765,7 @@ vergil : ok=8    changed=6    unreachable=0    failed=0
 docker exec vergil mysql -u wp_admin -p'ChangeMe_2026!' -e "SHOW DATABASES;"
 ```
 
-Expected output includes `wp_uwit` in the database list.
+Expected output includes `wp_debian` in the database list.
 
 ```bash
 # Verify the user privileges
