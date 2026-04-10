@@ -27,13 +27,18 @@
         cmd: mariadb-install-db --user=mysql
         creates: /var/lib/mysql/mysql
 
+    - name: Check if MariaDB is running
+      ansible.builtin.command:
+        cmd: pgrep -f mariadbd
+      register: mariadb_check
+      failed_when: false
+      changed_when: false
+
     - name: Start MariaDB (container workaround)
       ansible.builtin.shell: |
         mariadbd-safe &
         sleep 3
-      args:
-        creates: /var/run/mysqld/mysqld.pid
-      changed_when: true
+      when: mariadb_check.rc != 0
 
     - name: Create application databases
       community.mysql.mysql_db:
@@ -77,4 +82,4 @@
       ansible.builtin.file:
         path: /tmp/.wp_schema_imported
         state: touch
-      when: import_result is succeeded
+      when: import_result is changed

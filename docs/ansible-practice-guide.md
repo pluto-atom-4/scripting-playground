@@ -545,14 +545,20 @@ ovid : ok=8    changed=6    unreachable=0    failed=0    skipped=0    rescued=0 
 Docker containers typically don't run systemd, so the `service` module may fail. The playbook includes a fallback task:
 
 ```yaml
+    - name: Check if Apache is running
+      ansible.builtin.command:
+        cmd: pgrep -f apache2
+      register: apache_check
+      failed_when: false
+      changed_when: false
+
     - name: Start Apache directly (container workaround)
       ansible.builtin.command:
         cmd: apachectl start
-      changed_when: true
-      when: ansible_virtualization_type == "docker"
+      when: apache_check.rc != 0
 ```
 
-This task ensures Apache starts even when systemd isn't available in the container.
+This pre-check ensures Apache is only started if it's not already running, keeping the playbook idempotent in container environments without systemd.
 
 ### Step 7.4.1 — Inspect Apache running status
 
@@ -663,13 +669,18 @@ mysql_service: mariadb
         cmd: mariadb-install-db --user=mysql
         creates: /var/lib/mysql/mysql
 
+    - name: Check if MariaDB is running
+      ansible.builtin.command:
+        cmd: pgrep -f mariadbd
+      register: mariadb_check
+      failed_when: false
+      changed_when: false
+
     - name: Start MariaDB (container workaround)
       ansible.builtin.shell: |
         mariadbd-safe &
         sleep 3
-      args:
-        creates: /var/run/mysqld/mysqld.pid
-      changed_when: true
+      when: mariadb_check.rc != 0
 
     - name: Create application databases
       community.mysql.mysql_db:
@@ -713,7 +724,7 @@ mysql_service: mariadb
       ansible.builtin.file:
         path: /tmp/.wp_schema_imported
         state: touch
-      when: import_result is succeeded
+      when: import_result is changed
 ```
 
 ### Step 8.3 — Install the community.mysql collection
