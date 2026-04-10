@@ -192,6 +192,19 @@ Expected output ends with:
 Successfully tagged ansible-target:latest
 ```
 
+Verify the image was created:
+
+```bash
+docker images ansible-target
+```
+
+Expected output:
+
+```
+REPOSITORY        TAG       IMAGE ID       CREATED        SIZE
+ansible-target    latest    <hash>         <timestamp>    <size>
+```
+
 ### Step 4.3 — Launch the two containers
 
 ```bash
