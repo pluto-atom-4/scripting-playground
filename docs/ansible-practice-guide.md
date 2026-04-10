@@ -650,14 +650,6 @@ mysql_service: mariadb
         name: "{{ mysql_packages }}"
         state: present
 
-    - name: Start MariaDB directly (container workaround)
-      ansible.builtin.shell: |
-        mariadbd-safe &
-        sleep 3
-      args:
-        creates: /var/run/mysqld/mysqld.pid
-      changed_when: true
-
     - name: Ensure MariaDB data directory has correct ownership
       ansible.builtin.file:
         path: /var/lib/mysql
@@ -671,12 +663,12 @@ mysql_service: mariadb
         cmd: mariadb-install-db --user=mysql
         creates: /var/lib/mysql/mysql
 
-    - name: Start MariaDB properly
+    - name: Start MariaDB (container workaround)
       ansible.builtin.shell: |
-        pkill -f mariadbd || true
-        sleep 1
         mariadbd-safe &
         sleep 3
+      args:
+        creates: /var/run/mysqld/mysqld.pid
       changed_when: true
 
     - name: Create application databases
@@ -699,11 +691,21 @@ mysql_service: mariadb
       loop: "{{ mysql_users }}"
       no_log: true   # Hide passwords from output
 
-    - name: Import WordPress schema (if sample SQL exists on control node)
+    # NOTE: wordpress.sql lives in ansible-lab/files/ on the control node.
+    - name: Copy WordPress schema to target
+      ansible.builtin.copy:
+        src: ../files/wordpress.sql
+        dest: /tmp/wordpress.sql
+        mode: "0644"
+      ignore_errors: true
+      register: copy_result
+
+    - name: Import WordPress schema into wp_debian
       ansible.builtin.shell: |
-        mariadb -u root wp_uwit < /tmp/wordpress.sql
+        mariadb -u root wp_debian < /tmp/wordpress.sql
       args:
         creates: /tmp/.wp_schema_imported
+      when: copy_result is succeeded
       ignore_errors: true
       register: import_result
 
