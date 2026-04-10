@@ -334,14 +334,23 @@ ansible-lab/
 ├── group_vars/
 │   ├── webservers.yml
 │   └── dbservers.yml
+├── host_vars/
+│   ├── ovid.yml
+│   └── vergil.yml
 ├── playbooks/
 │   ├── apache.yml
 │   ├── mysql.yml
 │   └── site.yml
-├── roles/                  (optional, for later refactoring)
+├── roles/                     (optional, for later refactoring)
+│   └── .gitkeep
+├── templates/
+│   └── wp-config.php.j2
+├── keys/
+│   ├── ansible_key
+│   └── ansible_key.pub
 ├── Dockerfile.target
-├── ansible_key
-└── ansible_key.pub
+├── requirements.yml
+└── pyproject.toml
 ```
 
 ### Step 6.2 — Create `ansible.cfg`
@@ -350,7 +359,7 @@ ansible-lab/
 [defaults]
 inventory = inventory/hosts.yml
 remote_user = ansible
-private_key_file = ./ansible_key
+private_key_file = ./keys/ansible_key
 host_key_checking = False
 retry_files_enabled = False
 
