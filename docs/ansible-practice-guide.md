@@ -334,17 +334,23 @@ ansible-lab/
 ├── group_vars/
 │   ├── webservers.yml
 │   └── dbservers.yml
+├── host_vars/
+│   ├── ovid.yml
+│   └── vergil.yml
 ├── playbooks/
 │   ├── apache.yml
 │   ├── mysql.yml
 │   └── site.yml
 ├── roles/                     (optional, for later refactoring)
 │   └── .gitkeep
+├── templates/
+│   └── wp-config.php.j2
 ├── keys/
 │   ├── ansible_key
 │   └── ansible_key.pub
 ├── Dockerfile.target
-└── requirements.yml
+├── requirements.yml
+└── pyproject.toml
 ```
 
 ### Step 6.2 — Create `ansible.cfg`
