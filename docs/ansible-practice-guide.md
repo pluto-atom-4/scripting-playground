@@ -282,6 +282,24 @@ docker exec vergil chown ansible:ansible /home/ansible/.ssh/authorized_keys
 docker exec vergil chmod 600 /home/ansible/.ssh/authorized_keys
 ```
 
+Verify the authorized_keys files were created with proper permissions:
+
+```bash
+# Check ovid
+docker exec ovid ls -l /home/ansible/.ssh/authorized_keys
+
+# Check vergil
+docker exec vergil ls -l /home/ansible/.ssh/authorized_keys
+```
+
+Expected output (for both):
+
+```
+-rw------- 1 ansible ansible 103 Apr 10 00:45 /home/ansible/.ssh/authorized_keys
+```
+
+The `600` permissions (owner read/write only) are correct for SSH authorized_keys files.
+
 ### Step 5.3 — Test SSH connectivity
 
 ```bash
