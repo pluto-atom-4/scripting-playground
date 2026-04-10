@@ -604,7 +604,7 @@ mysql_service: mariadb
 
 # Database and user to create
 mysql_databases:
-  - name: wp_uwit
+  - name: wp_debian
     encoding: utf8mb4
     collation: utf8mb4_unicode_ci
 
@@ -612,10 +612,26 @@ mysql_users:
   - name: wp_admin
     password: "ChangeMe_2026!"
     host: "%"
-    priv: "wp_uwit.*:ALL"
+    priv: "wp_debian.*:ALL"
 ```
 
-### Step 8.2 — Create `playbooks/mysql.yml`
+**Location:** Place this file in `ansible-lab/group_vars/dbservers.yml` (alongside `webservers.yml`)
+
+**Note:** These group variables apply to the `dbservers` group (vergil container in `inventory/hosts.yml`).
+
+### Step 8.2 — Create host-specific variables `host_vars/vergil.yml` (optional)
+
+For host-specific overrides:
+
+```yaml
+---
+# Override group variables for vergil (the database server)
+mysql_service: mariadb
+```
+
+**Location:** Place this file in `ansible-lab/host_vars/vergil.yml` (alongside `ovid.yml`)
+
+### Step 8.3 — Create `playbooks/mysql.yml`
 
 ```yaml
 ---

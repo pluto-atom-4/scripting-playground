@@ -9,7 +9,7 @@ mysql_service: mariadb
 
 # Database and user to create
 mysql_databases:
-  - name: wp_uwit
+  - name: wp_debian
     encoding: utf8mb4
     collation: utf8mb4_unicode_ci
 
@@ -17,4 +17,4 @@ mysql_users:
   - name: wp_admin
     password: "ChangeMe_2026!"
     host: "%"
-    priv: "wp_uwit.*:ALL"
+    priv: "wp_debian.*:ALL"
