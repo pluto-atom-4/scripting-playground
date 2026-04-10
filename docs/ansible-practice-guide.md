@@ -652,7 +652,7 @@ mysql_service: mariadb
 
     - name: Start MariaDB directly (container workaround)
       ansible.builtin.shell: |
-        mysqld_safe --skip-grant-tables &
+        mariadbd-safe &
         sleep 3
       args:
         creates: /var/run/mysqld/mysqld.pid
@@ -668,14 +668,14 @@ mysql_service: mariadb
 
     - name: Initialize MariaDB (if needed)
       ansible.builtin.command:
-        cmd: mysql_install_db --user=mysql
+        cmd: mariadb-install-db --user=mysql
         creates: /var/lib/mysql/mysql
 
     - name: Start MariaDB properly
       ansible.builtin.shell: |
-        pkill -f mysqld || true
+        pkill -f mariadbd || true
         sleep 1
-        mysqld_safe &
+        mariadbd-safe &
         sleep 3
       changed_when: true
 
@@ -701,7 +701,7 @@ mysql_service: mariadb
 
     - name: Import WordPress schema (if sample SQL exists on control node)
       ansible.builtin.shell: |
-        mysql -u root wp_uwit < /tmp/wordpress.sql
+        mariadb -u root wp_uwit < /tmp/wordpress.sql
       args:
         creates: /tmp/.wp_schema_imported
       ignore_errors: true
