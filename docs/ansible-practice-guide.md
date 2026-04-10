@@ -104,8 +104,9 @@ docker run --rm hello-world
 Using `uv` provides fast, reliable virtual environment and dependency management. If `uv` is not installed, see the [uv documentation](https://docs.astral.sh/uv/getting-started/installation/).
 
 ```bash
-# Create a project directory for this exercise
-mkdir -p ~/ansible-lab && cd ~/ansible-lab
+# Navigate to the current scripting-playground directory
+# (assumes you're in or cd into the scripting-playground repository)
+cd ansible-lab
 
 # Create a virtual environment with uv (pinned to Python 3.11 for stability)
 uv venv --python 3.11 .venv
@@ -142,7 +143,7 @@ We need containers that behave like minimal Linux servers with SSH access. Stand
 ### Step 4.1 — Create the Dockerfile
 
 ```bash
-cd ~/ansible-lab
+cd ansible-lab
 ```
 
 Create the file `Dockerfile.target`:
@@ -238,23 +239,45 @@ Ansible connects to managed nodes over SSH. We use key-based authentication (no 
 ### Step 5.1 — Generate a dedicated SSH key pair
 
 ```bash
-ssh-keygen -t ed25519 -f ~/ansible-lab/ansible_key -N "" -C "ansible-lab-key"
+cd ansible-lab  # if not already in the directory
+
+# Create a subdirectory for SSH keys
+mkdir -p keys
+
+# Generate the SSH key pair
+ssh-keygen -t ed25519 -f ./keys/ansible_key -N "" -C "ansible-lab-key"
+```
+
+Verify the keys were created:
+
+```bash
+ls -la keys/
+```
+
+Expected output:
+
+```
+total 8
+drwxr-xr-x  2 user user   4096 Apr 10 00:45 .
+drwxr-xr-x 10 user user   4096 Apr 10 00:45 ..
+-rw-------  1 user user   464 Apr 10 00:45 ansible_key
+-rw-r--r--  1 user user   103 Apr 10 00:45 ansible_key.pub
 ```
 
 This creates:
-- `~/ansible-lab/ansible_key` (private key)
-- `~/ansible-lab/ansible_key.pub` (public key)
+- `./keys/ansible_key` (private key, readable only by owner)
+- `./keys/ansible_key.pub` (public key, readable by all)
 
 ### Step 5.2 — Copy the public key into each container
 
 ```bash
 # Copy to ovid
-docker cp ~/ansible-lab/ansible_key.pub ovid:/home/ansible/.ssh/authorized_keys
+docker cp ./keys/ansible_key.pub ovid:/home/ansible/.ssh/authorized_keys
 docker exec ovid chown ansible:ansible /home/ansible/.ssh/authorized_keys
 docker exec ovid chmod 600 /home/ansible/.ssh/authorized_keys
 
 # Copy to vergil
-docker cp ~/ansible-lab/ansible_key.pub vergil:/home/ansible/.ssh/authorized_keys
+docker cp ./keys/ansible_key.pub vergil:/home/ansible/.ssh/authorized_keys
 docker exec vergil chown ansible:ansible /home/ansible/.ssh/authorized_keys
 docker exec vergil chmod 600 /home/ansible/.ssh/authorized_keys
 ```
@@ -262,10 +285,10 @@ docker exec vergil chmod 600 /home/ansible/.ssh/authorized_keys
 ### Step 5.3 — Test SSH connectivity
 
 ```bash
-ssh -i ~/ansible-lab/ansible_key -p 2201 -o StrictHostKeyChecking=no ansible@localhost "hostname && whoami"
+ssh -i ./keys/ansible_key -p 2201 -o StrictHostKeyChecking=no ansible@localhost "hostname && whoami"
 # Expected: a container ID and "ansible"
 
-ssh -i ~/ansible-lab/ansible_key -p 2202 -o StrictHostKeyChecking=no ansible@localhost "hostname && whoami"
+ssh -i ./keys/ansible_key -p 2202 -o StrictHostKeyChecking=no ansible@localhost "hostname && whoami"
 # Expected: a container ID and "ansible"
 ```
 
@@ -278,7 +301,7 @@ If both commands return successfully, SSH access is working.
 ### Step 6.1 — Create the directory structure
 
 ```bash
-cd ~/ansible-lab
+cd ansible-lab
 
 mkdir -p inventory group_vars host_vars roles
 ```
@@ -286,7 +309,7 @@ mkdir -p inventory group_vars host_vars roles
 Final layout (we will add files in the following steps):
 
 ```
-~/ansible-lab/
+ansible-lab/
 ├── ansible.cfg
 ├── inventory/
 │   └── hosts.yml
@@ -446,7 +469,7 @@ site_title: "UW-IT Managed Host - Ovid"
 ### Step 7.3 — Run the Apache playbook
 
 ```bash
-cd ~/ansible-lab
+cd ansible-lab
 ansible-playbook playbooks/apache.yml
 ```
 
@@ -775,7 +798,7 @@ docker rmi ansible-target
 deactivate
 
 # (Optional) Remove the entire lab directory
-# rm -rf ~/ansible-lab
+# rm -rf ansible-lab
 ```
 
 ---
