@@ -338,10 +338,13 @@ ansible-lab/
 │   ├── apache.yml
 │   ├── mysql.yml
 │   └── site.yml
-├── roles/                  (optional, for later refactoring)
+├── roles/                     (optional, for later refactoring)
+│   └── .gitkeep
+├── keys/
+│   ├── ansible_key
+│   └── ansible_key.pub
 ├── Dockerfile.target
-├── ansible_key
-└── ansible_key.pub
+└── requirements.yml
 ```
 
 ### Step 6.2 — Create `ansible.cfg`
