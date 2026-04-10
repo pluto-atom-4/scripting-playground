@@ -78,7 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"$(date '+%Y-%m-%d %H:%M:%S') PreToolUse Bash: $CLAUDE_TOOL_INPUT\" >> .claude/hooks.log"
+            "command": "echo \"$(date '+%Y-%m-%d %H:%M:%S') PreToolUse Bash: $CLAUDE_TOOL_INPUT\" >> \"$(git rev-parse --show-toplevel)/.claude/hooks.log\""
           }
         ]
       }

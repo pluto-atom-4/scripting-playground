@@ -45,13 +45,14 @@
       ansible.builtin.hostname:
         name: "{{ inventory_hostname }}"
 
+    # NOTE: /etc/hosts is bind-mounted in Docker containers, so
+    # lineinfile fails with "Device or resource busy" on rename.
+    # Use shell with in-place sed as a container workaround.
     - name: Add inventory hosts to /etc/hosts
-      ansible.builtin.lineinfile:
-        path: /etc/hosts
-        regexp: ".*{{ item }}$"
-        line: "{{ hostvars[item].ansible_host }} {{ item }}"
-        state: present
+      ansible.builtin.shell: |
+        grep -q '{{ item }}' /etc/hosts || echo '{{ hostvars[item].ansible_host }} {{ item }}' >> /etc/hosts
       loop: "{{ groups['all'] }}"
+      changed_when: false
 
     - name: Ensure log directory exists
       ansible.builtin.file:
