@@ -604,7 +604,7 @@ mysql_service: mariadb
 
 # Database and user to create
 mysql_databases:
-  - name: wp_uwit
+  - name: wp_debian
     encoding: utf8mb4
     collation: utf8mb4_unicode_ci
 
@@ -612,10 +612,26 @@ mysql_users:
   - name: wp_admin
     password: "ChangeMe_2026!"
     host: "%"
-    priv: "wp_uwit.*:ALL"
+    priv: "wp_debian.*:ALL"
 ```
 
-### Step 8.2 — Create `playbooks/mysql.yml`
+**Location:** Place this file in `ansible-lab/group_vars/dbservers.yml` (alongside `webservers.yml`)
+
+**Note:** These group variables apply to the `dbservers` group (vergil container in `inventory/hosts.yml`).
+
+### Step 8.2 — Create host-specific variables `host_vars/vergil.yml` (optional)
+
+For host-specific overrides:
+
+```yaml
+---
+# Override group variables for vergil (the database server)
+mysql_service: mariadb
+```
+
+**Location:** Place this file in `ansible-lab/host_vars/vergil.yml` (alongside `ovid.yml`)
+
+### Step 8.3 — Create `playbooks/mysql.yml`
 
 ```yaml
 ---
@@ -634,14 +650,6 @@ mysql_users:
         name: "{{ mysql_packages }}"
         state: present
 
-    - name: Start MariaDB directly (container workaround)
-      ansible.builtin.shell: |
-        mysqld_safe --skip-grant-tables &
-        sleep 3
-      args:
-        creates: /var/run/mysqld/mysqld.pid
-      changed_when: true
-
     - name: Ensure MariaDB data directory has correct ownership
       ansible.builtin.file:
         path: /var/lib/mysql
@@ -652,15 +660,15 @@ mysql_users:
 
     - name: Initialize MariaDB (if needed)
       ansible.builtin.command:
-        cmd: mysql_install_db --user=mysql
+        cmd: mariadb-install-db --user=mysql
         creates: /var/lib/mysql/mysql
 
-    - name: Start MariaDB properly
+    - name: Start MariaDB (container workaround)
       ansible.builtin.shell: |
-        pkill -f mysqld || true
-        sleep 1
-        mysqld_safe &
+        mariadbd-safe &
         sleep 3
+      args:
+        creates: /var/run/mysqld/mysqld.pid
       changed_when: true
 
     - name: Create application databases
@@ -683,11 +691,21 @@ mysql_users:
       loop: "{{ mysql_users }}"
       no_log: true   # Hide passwords from output
 
-    - name: Import WordPress schema (if sample SQL exists on control node)
+    # NOTE: wordpress.sql lives in ansible-lab/files/ on the control node.
+    - name: Copy WordPress schema to target
+      ansible.builtin.copy:
+        src: ../files/wordpress.sql
+        dest: /tmp/wordpress.sql
+        mode: "0644"
+      ignore_errors: true
+      register: copy_result
+
+    - name: Import WordPress schema into wp_debian
       ansible.builtin.shell: |
-        mysql -u root wp_uwit < /tmp/wordpress.sql
+        mariadb -u root wp_debian < /tmp/wordpress.sql
       args:
         creates: /tmp/.wp_schema_imported
+      when: copy_result is succeeded
       ignore_errors: true
       register: import_result
 
@@ -715,20 +733,30 @@ ansible-playbook playbooks/mysql.yml
 Expected output (abbreviated):
 
 ```
-PLAY [Provision MySQL (MariaDB) database server (Vergil)] ********************
+PLAY [Provision MySQL (MariaDB) database server (Vergil)] *******************************************************************
 
-TASK [Install MariaDB packages] ***********************************************
+TASK [Create application databases] *****************************************************************************************
+[WARNING]: Support of mysqlcline/MySQLdb connector is deprecated. We'll stop testing against it in collection version 4.0.0 and remove the related code in 5.0.0. Use PyMySQL connector instead.
+ok: [vergil] => (item={'name': 'wp_debian', 'encoding': 'utf8mb4', 'collation': 'utf8mb4_unicode_ci'})
+
+TASK [Create application users] *********************************************************************************************
+[WARNING]: Option column_case_sensitive is not provided. The default is now false, so the column's name will be uppercased. The default will be changed to true in community.mysql 4.0.0.
+ok: [vergil] => (item=(censored due to no_log))
+
+TASK [Copy WordPress schema to target] **************************************************************************************
 changed: [vergil]
 
-TASK [Create application databases] *******************************************
-changed: [vergil] => (item={'name': 'wp_uwit', ...})
-
-TASK [Create application users] ***********************************************
+TASK [Import WordPress schema into wp_debian] *******************************************************************************
 changed: [vergil]
 
-PLAY RECAP ********************************************************************
-vergil : ok=8    changed=6    unreachable=0    failed=0
+TASK [Mark schema as imported] **********************************************************************************************
+changed: [vergil]
+
+PLAY RECAP ******************************************************************************************************************
+vergil                     : ok=11   changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
+Note: The two warnings (MySQLdb connector deprecated and column_case_sensitive) come from the community.mysql collection and are
+   informational — they'll go away when the collection is updated to use PyMySQL. Not actionable for now.
 
 ### Step 8.5 — Verify MySQL is working
 
@@ -737,7 +765,7 @@ vergil : ok=8    changed=6    unreachable=0    failed=0
 docker exec vergil mysql -u wp_admin -p'ChangeMe_2026!' -e "SHOW DATABASES;"
 ```
 
-Expected output includes `wp_uwit` in the database list.
+Expected output includes `wp_debian` in the database list.
 
 ```bash
 # Verify the user privileges
