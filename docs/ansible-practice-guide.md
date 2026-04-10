@@ -359,7 +359,7 @@ ansible-lab/
 [defaults]
 inventory = inventory/hosts.yml
 remote_user = ansible
-private_key_file = ./ansible_key
+private_key_file = ./keys/ansible_key
 host_key_checking = False
 retry_files_enabled = False
 
