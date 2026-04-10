@@ -427,7 +427,7 @@ apache_packages:
 apache_service: apache2
 
 # A simple index page to verify the install
-site_title: "UW-IT Managed Host - Ovid"
+site_title: "Debian Managed Host - Ovid"
 ```
 
 ### Step 7.2 — Create `playbooks/apache.yml`
