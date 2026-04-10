@@ -427,7 +427,7 @@ apache_packages:
 apache_service: apache2
 
 # A simple index page to verify the install
-site_title: "UW-IT Managed Host - Ovid"
+site_title: "Debian Managed Host - Ovid"
 ```
 
 ### Step 7.2 — Create `playbooks/apache.yml`
@@ -500,26 +500,49 @@ cd ansible-lab
 ansible-playbook playbooks/apache.yml
 ```
 
-Expected output (abbreviated):
+Expected output:
 
 ```
-PLAY [Provision Apache web server (Ovid)] ************************************
+PLAY [Provision Apache web server (Ovid)] *****************************
 
-TASK [Update apt cache] *******************************************************
+TASK [Gathering Facts] ************************************************
+ok: [ovid]
+
+TASK [Update apt cache] ***********************************************
+ok: [ovid]
+
+TASK [Install Apache and PHP packages] ********************************
 changed: [ovid]
 
-TASK [Install Apache and PHP packages] ****************************************
+TASK [Enable Apache modules] ******************************************
+changed: [ovid] => (item=rewrite)
+ok: [ovid] => (item=ssl)
+changed: [ovid] => (item=headers)
+
+TASK [Create a test index page] ***************************************
 changed: [ovid]
 
-...
+TASK [Create PHP info page (for verification)] ************************
+changed: [ovid]
 
-PLAY RECAP ********************************************************************
-ovid : ok=6    changed=5    unreachable=0    failed=0
+TASK [Ensure Apache is started] ***************************************
+changed: [ovid]
+
+TASK [Start Apache directly (container workaround)] ********************
+changed: [ovid]
+
+PLAY RECAP ************************************************************
+ovid : ok=8    changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```
+
+**Analysis:**
+- ✅ 8 tasks executed successfully (Gathering Facts + 7 tasks)
+- ✅ 6 tasks made changes (package install, module enables, pages, start services)
+- ✅ 2 tasks reported `ok` (no changes needed: facts gathering, SSL module already enabled)
 
 ### Step 7.4 — Handle the container-without-systemd issue
 
-Docker containers typically don't run systemd, so the `service` module may fail. If it does, replace the last task or add a fallback:
+Docker containers typically don't run systemd, so the `service` module may fail. The playbook includes a fallback task:
 
 ```yaml
     - name: Start Apache directly (container workaround)
@@ -529,11 +552,29 @@ Docker containers typically don't run systemd, so the `service` module may fail.
       when: ansible_virtualization_type == "docker"
 ```
 
-Then manually start Apache in the container to verify:
+This task ensures Apache starts even when systemd isn't available in the container.
+
+### Step 7.4.1 — Inspect Apache running status
+
+Verify that Apache is running in the container:
 
 ```bash
-docker exec ovid apachectl start
+# Check if Apache process is running
+docker exec ovid ps aux | grep apache2
+
+# Expected output: Multiple apache2 processes
+# www-data    12  0.1  0.2  12345  6789 ?        Ss   01:45   0:00 /usr/sbin/apache2 -k start
+# www-data    15  0.0  0.1  10234  5678 ?        S    01:45   0:00 /usr/sbin/apache2 -k start
 ```
+
+Check Apache configuration is valid:
+
+```bash
+docker exec ovid apache2ctl -t
+# Expected: Syntax OK
+```
+
+**Best verification:** Test connectivity from your host (see Step 7.5 below). If Apache responds to HTTP requests, it's running correctly.
 
 ### Step 7.5 — Verify Apache is serving
 
