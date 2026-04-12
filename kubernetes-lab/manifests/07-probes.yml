@@ -1,0 +1,68 @@
+---
+# 07-probes.yml — Liveness, Readiness, and Startup probes
+#
+# Probes tell Kubernetes how to check container health:
+#   - Liveness:  Is the container alive? If not, restart it.
+#   - Readiness: Is the container ready to serve traffic? If not, remove from Service.
+#   - Startup:   Has the container finished starting? Prevents premature liveness checks.
+#
+# Interview question: "What happens if a readiness probe fails?"
+# Answer: The Pod is removed from Service endpoints — no traffic routed to it —
+# but the Pod is NOT restarted. Only liveness failure triggers a restart.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-probes
+  namespace: dev
+  labels:
+    app: nginx-probes
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-probes
+  template:
+    metadata:
+      labels:
+        app: nginx-probes
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+
+          # Startup probe — runs first, blocks liveness/readiness until success
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 10
+            periodSeconds: 5
+
+          # Liveness probe — restart container if unhealthy
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # Readiness probe — remove from Service if not ready
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 2
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi

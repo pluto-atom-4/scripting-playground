@@ -1,0 +1,34 @@
+---
+# 04-configmap.yml — Decouple configuration from container images
+#
+# ConfigMaps store non-sensitive configuration data as key-value pairs.
+# They can be consumed as environment variables or mounted as files.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: dev
+data:
+  # Simple key-value pairs (used as env vars)
+  APP_ENV: "development"
+  LOG_LEVEL: "debug"
+  MAX_CONNECTIONS: "100"
+
+  # File-style entry (mounted as a file in the container)
+  nginx-custom.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+        }
+    }
