@@ -1,0 +1,90 @@
+---
+# 08-statefulset.yml — StatefulSet for stateful workloads
+#
+# StatefulSets provide:
+#   - Stable, unique network identities (pod-0, pod-1, pod-2)
+#   - Stable persistent storage (PVC per Pod)
+#   - Ordered, graceful deployment and scaling
+#
+# Use for: databases, message queues, distributed caches.
+# Use Deployments for: stateless web apps, APIs, workers.
+#
+# Interview question: "When would you use a StatefulSet instead of a Deployment?"
+# Answer: When Pods need stable identity, persistent storage that follows the Pod,
+# or ordered startup/shutdown — e.g., MySQL replicas, Kafka brokers, Redis clusters.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-headless
+  namespace: dev
+spec:
+  # Headless service (clusterIP: None) — required for StatefulSet
+  # Creates DNS records like: mysql-0.mysql-headless.dev.svc.cluster.local
+  clusterIP: None
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: dev
+spec:
+  serviceName: mysql-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_NAME
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_PASSWORD
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

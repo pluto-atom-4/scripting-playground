@@ -1,0 +1,26 @@
+---
+# 01-namespaces.yml — Practice namespaces for isolation exercises
+#
+# Namespaces let you partition cluster resources into logical groups.
+# At UW-IT scale (29,000 sites), namespaces isolate tenants and teams.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+  labels:
+    env: development
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: staging
+  labels:
+    env: staging
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+  labels:
+    env: production
