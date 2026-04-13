@@ -467,7 +467,7 @@ Expected: the custom nginx config from the ConfigMap with the `/health` endpoint
 
 ```bash
 # Test the health endpoint
-kubectl exec -n dev "$POD_NAME" -- wget -qO- http://localhost/health
+kubectl exec -n dev "$POD_NAME" -- curl -s http://localhost/health
 # Expected: healthy
 ```
 
