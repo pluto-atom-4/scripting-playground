@@ -935,14 +935,29 @@ kubectl delete namespace dev staging prod
 kind delete cluster --name k8s-lab
 ```
 
-Verify cleanup:
+**Tip:** If you see typos like "unknown command 'delte'" when deleting, kubectl will suggest the correct command. Double-check namespace names—`prod` not `pord`.
+
+If multiple clusters exist, verify which one to delete:
 
 ```bash
-# No clusters should remain (unless you have others)
+# List all existing clusters
+kind get clusters
+
+# If needed, delete a different cluster
+kind delete cluster --name k8s-temp
+```
+
+### Verify cleanup
+
+```bash
+# No k8s-lab clusters should remain (unless you have other clusters)
 kind get clusters
 
 # Docker containers for the cluster should be gone
 docker ps --filter "name=k8s-lab"
+
+# Check all running containers (if needed)
+docker ps
 ```
 
 ---
