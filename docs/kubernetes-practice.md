@@ -211,7 +211,7 @@ kubectl <verb> <resource> [name] [flags]
 
 ```bash
 # Output as YAML (see the full object definition)
-kubectl get pod <name> -o yaml
+kubectl get pod <name>  -n kube-system -o yaml-o yaml
 
 # Output as wide table (more columns)
 kubectl get pods -o wide
@@ -362,12 +362,13 @@ nginx-nodeport    NodePort    10.96.x.x      <none>        80:30080/TCP   5s
 | **NodePort** | External via `<NodeIP>:<NodePort>` | Dev/test external access |
 | **LoadBalancer** | External via cloud LB | Production external access |
 
+
 ### Step 6.3 — Test the ClusterIP service (internal)
 
 ```bash
 # ClusterIP is only reachable from inside the cluster.
 # Use a temporary Pod to test it:
-kubectl run curl-test --rm -it --restart=Never -n dev \
+kubectl run curl-test -it --rm --restart=Never -n dev \
     --image=curlimages/curl -- curl -s http://nginx-clusterip
 ```
 
@@ -466,7 +467,7 @@ Expected: the custom nginx config from the ConfigMap with the `/health` endpoint
 
 ```bash
 # Test the health endpoint
-kubectl exec -n dev "$POD_NAME" -- wget -qO- http://localhost/health
+kubectl exec -n dev "$POD_NAME" -- curl -s http://localhost/health
 # Expected: healthy
 ```
 
